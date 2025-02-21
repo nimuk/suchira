@@ -1,0 +1,39 @@
+public class FilterService {
+    
+    public String convertToSql(String filterExpression) {
+        // Create a CharStream from the filter expression
+        CharStream input = CharStreams.fromString(filterExpression);
+        
+        // Create lexer
+        FilterLexer lexer = new FilterLexer(input);
+        
+        // Create token stream
+        CommonTokenStream tokens = new CommonTokenStream(lexer);
+        
+        // Create parser
+        FilterParser parser = new FilterParser(tokens);
+        
+        // Parse the expression
+        FilterParser.FilterContext tree = parser.filter();
+        
+        // Create visitor and visit the parse tree
+        FilterSqlVisitor visitor = new FilterSqlVisitor();
+        String sqlWhere = visitor.visit(tree);
+        
+        return sqlWhere;
+    }
+} 
+// Usage examples
+
+
+FilterService filterService = new FilterService();
+
+// Example 1
+String filter1 = "first-name eq \"John\" AND country-of-origin = \"IE\"";
+String sql1 = filterService.convertToSql(filter1);
+// Result: first_name = "John" AND country_of_origin = "IE"
+
+// Example 2
+String filter2 = "(first-name like \"Smi*\" OR first-name eq \"Smith\") AND date-of-birth gt 01-01-2000";
+String sql2 = filterService.convertToSql(filter2);
+// Result: (first_name LIKE "Smi%" OR first_name = "Smith") AND date_of_birth > 01-01-2000
