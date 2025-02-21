@@ -1,0 +1,74 @@
+public class FilterSqlVisitor extends FilterBaseVisitor<String> {
+    
+    @Override
+    public String visitParenExpression(FilterParser.ParenExpressionContext ctx) {
+        return "(" + visit(ctx.expression()) + ")";
+    }
+
+    @Override
+    public String visitAndExpression(FilterParser.AndExpressionContext ctx) {
+        String left = visit(ctx.expression(0));
+        String right = visit(ctx.expression(1));
+        return left + " AND " + right;
+    }
+
+    @Override
+    public String visitOrExpression(FilterParser.OrExpressionContext ctx) {
+        String left = visit(ctx.expression(0));
+        String right = visit(ctx.expression(1));
+        return left + " OR " + right;
+    }
+
+    @Override
+    public String visitComparison(FilterParser.ComparisonContext ctx) {
+        String field = visit(ctx.field());
+        String operator = visit(ctx.operator());
+        String value = visit(ctx.value());
+        
+        // Handle LIKE operator specially
+        if (operator.equals("LIKE")) {
+            value = value.replace("*", "%");
+        }
+        
+        return field + " " + operator + " " + value;
+    }
+
+    @Override
+    public String visitField(FilterParser.FieldContext ctx) {
+        // Convert field names from kebab-case to snake_case
+        return ctx.getText().replace('-', '_');
+    }
+
+    @Override
+    public String visitOperator(FilterParser.OperatorContext ctx) {
+        switch (ctx.getText().toLowerCase()) {
+            case "eq":
+            case "=":
+                return "=";
+            case "neq":
+            case "!=":
+                return "!=";
+            case "gt":
+            case ">":
+                return ">";
+            case "gte":
+            case ">=":
+                return ">=";
+            case "lt":
+            case "<":
+                return "<";
+            case "lte":
+            case "<=":
+                return "<=";
+            case "like":
+                return "LIKE";
+            default:
+                throw new RuntimeException("Unknown operator: " + ctx.getText());
+        }
+    }
+
+    @Override
+    public String visitValue(FilterParser.ValueContext ctx) {
+        return ctx.getText();
+    }
+}
